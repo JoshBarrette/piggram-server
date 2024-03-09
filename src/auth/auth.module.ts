@@ -9,6 +9,6 @@ import { AuthedGuard } from "./guards/authed/authed.guard";
   imports: [UsersModule],
   controllers: [AuthController],
   providers: [AuthService, GoogleStrategy, AuthedGuard],
-  exports: [AuthedGuard],
+  exports: [AuthedGuard, AuthService],
 })
 export class AuthModule {}
