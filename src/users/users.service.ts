@@ -9,18 +9,54 @@ export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   /**
-   * Adds a new User to the DB
-   * @param newUser The user to add
-   * @returns The added user
+   * Handles getting a user's public profile.
+   * @param id The id of the user's profile to get.
+   * @returns the profile the given user.
+   */
+  async handleGetProfile(id: string) {
+    let user: User;
+    try {
+      user = await this.getUserById(id);
+      if (!user) throw new Error();
+    } catch {
+      return { profileFound: false };
+    }
+
+    return {
+      profileFound: true,
+      profile: {
+        userId: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        followingCount: user.followingCount,
+        followersCount: user.followersCount,
+        joinDate: user.createdAt,
+      },
+    };
+  }
+
+  /**
+   * Adds a new User to the DB.
+   * @param newUser The user to add.
+   * @returns The added user.
    */
   async addUser(newUser: UserDto): Promise<User> {
     return await this.userModel.create(newUser);
   }
 
   /**
-   * Queries the DB for a User based on their email
-   * @param email The email of the User we are looking for
-   * @returns The User with the given email
+   * Queries the DB for a User based on their id.
+   * @param id The id of the User we are looking for.
+   * @returns The User with the given id.
+   */
+  getUserById(id: string): Promise<User> {
+    return this.userModel.findOne({ _id: id });
+  }
+
+  /**
+   * Queries the DB for a User based on their email.
+   * @param email The email of the User we are looking for.
+   * @returns The User with the given email.
    */
   getUserByEmail(email: string): Promise<User> {
     return this.userModel.findOne({ email });

@@ -18,6 +18,9 @@ export class Post {
   })
   posterId: User;
 
+  @Prop({ required: true, maxlength: 9 })
+  imageUrls: string[];
+
   @Prop({ maxlength: 255 })
   caption: string;
 
