@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Post,
   Req,
@@ -12,11 +13,13 @@ import { Request } from "express";
 import { Model } from "mongoose";
 import { AuthedGuard } from "src/auth/guards/authed/authed.guard";
 import { Post as PostSchema } from "./schemas/post.schema";
+import { UploadService } from "src/upload/upload.service";
 
 @Controller("posts")
 export class PostsController {
   constructor(
-    @InjectModel(PostSchema.name) private postModel: Model<PostSchema>,
+    @InjectModel(PostSchema.name) private readonly postModel: Model<PostSchema>,
+    private readonly uploadService: UploadService,
   ) {}
 
   @Post("new")
@@ -25,7 +28,14 @@ export class PostsController {
   async handleNewPost(
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: Request,
+    @Body("caption") caption?: string,
   ) {
-    return { user: req.user, files };
+    return {
+      res: await this.uploadService.uploadFile(
+        req.user.userId + "-0",
+        files[0],
+      ),
+      caption: caption ?? "no caption",
+    };
   }
 }

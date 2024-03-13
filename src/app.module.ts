@@ -3,12 +3,13 @@ import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
-import { UsersModule } from './users/users.module';
+import { UsersModule } from "./users/users.module";
 import { MongooseModule } from "@nestjs/mongoose";
-import { AuthService } from "./auth/auth.service";
-import { PostsModule } from './posts/posts.module';
-import { FollowsModule } from './follows/follows.module';
-import { LikesModule } from './likes/likes.module';
+import { PostsModule } from "./posts/posts.module";
+import { FollowsModule } from "./follows/follows.module";
+import { LikesModule } from "./likes/likes.module";
+import { UploadService } from "./upload/upload.service";
+import { UploadModule } from "./upload/upload.module";
 
 @Module({
   imports: [
@@ -24,8 +25,9 @@ import { LikesModule } from './likes/likes.module';
     PostsModule,
     FollowsModule,
     LikesModule,
+    UploadModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [UploadService],
 })
 export class AppModule {}
