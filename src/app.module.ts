@@ -10,6 +10,7 @@ import { FollowsModule } from "./follows/follows.module";
 import { LikesModule } from "./likes/likes.module";
 import { UploadService } from "./upload/upload.service";
 import { UploadModule } from "./upload/upload.module";
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UploadModule } from "./upload/upload.module";
     FollowsModule,
     LikesModule,
     UploadModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [UploadService],

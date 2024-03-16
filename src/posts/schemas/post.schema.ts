@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { HydratedDocument, Types } from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 import { User } from "src/users/schemas/user.schema";
 
 export type PostDocument = HydratedDocument<Post>;
@@ -16,13 +16,19 @@ export class Post {
     required: true,
     index: true,
   })
-  posterId: User;
+  poster: User;
 
-  @Prop({ required: true, maxlength: 9 })
+  @Prop({ maxlength: 9 })
   imageUrls: string[];
 
   @Prop({ maxlength: 255 })
   caption: string;
+
+  @Prop({ default: 0 })
+  likes: number;
+
+  @Prop({ default: 0 })
+  comments: number;
 
   get createdAt(): Date {
     return this.createdAt;

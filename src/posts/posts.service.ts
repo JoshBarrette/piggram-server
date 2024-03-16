@@ -1,4 +1,121 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { Post as PostSchema } from "./schemas/post.schema";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { UploadService } from "src/upload/upload.service";
+import { ImageSchema } from "./schemas/image.schema";
+import { SharedService } from "src/shared/shared.service";
 
 @Injectable()
-export class PostsService {}
+export class PostsService {
+  constructor(
+    @InjectModel(PostSchema.name) private readonly postModel: Model<PostSchema>,
+    private readonly uploadService: UploadService,
+    private readonly sharedService: SharedService,
+  ) {}
+
+  /**
+   * Handles the /posts/new endpoint and creates a new post.
+   * @param files The images files to upload.
+   * @param posterId The ID of the poster.
+   * @param caption The caption for the post.
+   * @returns The new post.
+   */
+  async handleNewPost(
+    files: Express.Multer.File[],
+    posterId: string,
+    caption?: string,
+  ) {
+    const filesAreValid = this.verifyImages(files);
+    const idIsValid = this.sharedService.verifyMongooseID(posterId);
+    if (!filesAreValid.success) {
+      return filesAreValid.error;
+    } else if (!idIsValid) {
+      return { error: "Invalid posterId" };
+    }
+
+    const newPost = await this.createBlankPost(posterId, caption);
+    const imageURLs = await this.uploadService.uploadFiles(files, newPost._id);
+    return await this.updatePostImages(imageURLs, newPost._id);
+  }
+
+  /**
+   * Gets a post given its ID.
+   * @param id The ID of the post to get.
+   * @returns The post.
+   */
+  async handleGetPost(id: string): Promise<PostSchema> {
+    if (!this.sharedService.verifyMongooseID(id)) {
+      throw new BadRequestException("Invalid post id");
+    }
+
+    return await this.postModel
+      .findById(id)
+      .populate("poster", "_id firstName lastName picture");
+  }
+
+  /**
+   * Gets all posts from a user given their ID.
+   * @param id The ID of the user posts we want.
+   * @returns Their posts.
+   */
+  async handleGetPostsByUser(id: string): Promise<PostSchema[]> {
+    if (!this.sharedService.verifyMongooseID(id)) {
+      throw new BadRequestException("Invalid user id");
+    }
+
+    // TODO: pagination
+    return await this.postModel.find({ posterId: id });
+  }
+
+  /**
+   * Validates all image files with zod.
+   * @param files The images to validate.
+   * @returns JSON with success flag. If false, error field that
+   * contains zod error message.
+   */
+  verifyImages(files: Express.Multer.File[]): {
+    success: boolean;
+    error?: string;
+  } {
+    for (let i = 0; i < files.length; i++) {
+      const im = ImageSchema.safeParse({ image: files[i] });
+      if (im.success === false) {
+        return { success: false, error: im.error.errors[0].message };
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Creates a new blank post with no images attached to it.
+   * @param posterId The ID of the poser.
+   * @param caption The caption/description of the post.
+   * @returns The newly created post.
+   */
+  async createBlankPost(
+    posterId: string,
+    caption?: string,
+  ): Promise<PostSchema> {
+    return await this.postModel.create({ posterId, caption });
+  }
+
+  /**
+   * Updates the images on a post via replacement.
+   * @param imageURLs The new image URLs.
+   * @param postId The ID the post to update.
+   * @returns The updated post from mongoose.
+   */
+  async updatePostImages(
+    imageURLs: string[],
+    postId: string,
+  ): Promise<PostSchema> {
+    await this.postModel.findOneAndUpdate(
+      { _id: postId },
+      { $set: { imageUrls: imageURLs } },
+    );
+
+    return await this.postModel.findById(postId);
+  }
+}
