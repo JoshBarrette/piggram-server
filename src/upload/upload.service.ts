@@ -23,6 +23,12 @@ export class UploadService {
     });
   }
 
+  /**
+   * Uploads files to s3.
+   * @param files The files to upload.
+   * @param uploaderId The id of the uploader.
+   * @returns string[] containing the urls of the file.
+   */
   async uploadFiles(
     files: Express.Multer.File[],
     uploaderId: string,
@@ -31,11 +37,9 @@ export class UploadService {
 
     for (let i = 0; i < files.length; i++) {
       const newURL = await this.uploadFile(uploaderId + `-${i}`, files[i]);
-      console.log("newURL", newURL);
       fileURLs.push(newURL);
     }
 
-    console.log("fileURLs", fileURLs);
     return fileURLs;
   }
 
@@ -99,20 +103,19 @@ export class UploadService {
    */
   private async resizeBuffer(buffer: Buffer): Promise<Buffer> {
     const image = sharp(buffer);
+
     const metadata = await image.metadata();
-
     const { width, height } = metadata;
-    if (width <= MAX_IMAGE_SIZE && height <= MAX_IMAGE_SIZE) {
-      return buffer;
-    }
-
-    const size = Math.min(width, height);
-    const top = (height - size) / 2;
 
     let croppedImageBuffer: Buffer;
     if (height > width) {
       croppedImageBuffer = await image
-        .extract({ left: 0, top, width: size, height: size })
+        .extract({
+          left: 0,
+          top: Math.floor((height - width) / 2),
+          width: width,
+          height: width,
+        })
         .resize({ width: MAX_IMAGE_SIZE, height: MAX_IMAGE_SIZE })
         .toBuffer();
     } else {

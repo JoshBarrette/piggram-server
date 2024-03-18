@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -19,6 +20,15 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   /**
+   * Get all posts from the DB.
+   * @returns All posts.
+   */
+  @Get("/all")
+  async handleGetAllPosts() {
+    return this.postsService.handleGetAllPosts();
+  }
+
+  /**
    * Gets a post given its ID.
    * @param id The ID of the post to get.
    * @returns The post.
@@ -32,6 +42,18 @@ export class PostsController {
         error: e,
       };
     }
+  }
+
+  /**
+   * Delete a single post.
+   * @param id The id of the post to delete.
+   * @param req The request.
+   * @returns JSON with success flag.
+   */
+  @Delete("delete/:id")
+  @UseGuards(AuthedGuard)
+  async handleDeletePost(@Param("id") id: string, @Req() req: Request) {
+    return this.postsService.handleDeletePost(id, req);
   }
 
   /**
@@ -50,6 +72,13 @@ export class PostsController {
     }
   }
 
+  /**
+   * Handles creating a new post.
+   * @param files The images to upload.
+   * @param req The request.
+   * @param caption The caption for the post.
+   * @returns JSON with success flag and the post of successful.
+   */
   @Post("new")
   @UseGuards(AuthedGuard)
   @UseInterceptors(AnyFilesInterceptor())

@@ -1,10 +1,15 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { Post as PostSchema } from "./schemas/post.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { UploadService } from "src/upload/upload.service";
 import { ImageSchema } from "./schemas/image.schema";
 import { SharedService } from "src/shared/shared.service";
+import { Request } from "express";
 
 @Injectable()
 export class PostsService {
@@ -13,6 +18,37 @@ export class PostsService {
     private readonly uploadService: UploadService,
     private readonly sharedService: SharedService,
   ) {}
+
+  /**
+   * Get all posts from the DB.
+   * @returns All posts.
+   */
+  async handleGetAllPosts() {
+    return await this.postModel
+      .find()
+      .populate("poster", "_id firstName lastName picture");
+  }
+
+  /**
+   * Delete a single post.
+   * @param id The id of the post to delete.
+   * @param req The request.
+   * @returns JSON with success flag.
+   */
+  async handleDeletePost(id: string, req: Request) {
+    const idIsValid = this.sharedService.verifyMongooseID(id);
+    if (!idIsValid) {
+      throw new BadRequestException();
+    }
+
+    const post = await this.postModel.findById(id);
+    if (post.poster._id.toString() !== req.user.userId) {
+      throw new UnauthorizedException();
+    }
+
+    await this.postModel.deleteOne({ _id: post._id });
+    return { success: true };
+  }
 
   /**
    * Handles the /posts/new endpoint and creates a new post.
@@ -35,8 +71,16 @@ export class PostsService {
     }
 
     const newPost = await this.createBlankPost(posterId, caption);
-    const imageURLs = await this.uploadService.uploadFiles(files, newPost._id);
-    return await this.updatePostImages(imageURLs, newPost._id);
+    try {
+      const imageURLs = await this.uploadService.uploadFiles(
+        files,
+        newPost._id,
+      );
+      return await this.updatePostImages(imageURLs, newPost._id);
+    } catch (e) {
+      await this.postModel.deleteOne({ _id: newPost._id });
+      throw e;
+    }
   }
 
   /**
@@ -90,15 +134,12 @@ export class PostsService {
 
   /**
    * Creates a new blank post with no images attached to it.
-   * @param posterId The ID of the poser.
+   * @param poster The ID of the poser.
    * @param caption The caption/description of the post.
    * @returns The newly created post.
    */
-  async createBlankPost(
-    posterId: string,
-    caption?: string,
-  ): Promise<PostSchema> {
-    return await this.postModel.create({ posterId, caption });
+  async createBlankPost(poster: string, caption?: string): Promise<PostSchema> {
+    return await this.postModel.create({ poster, caption });
   }
 
   /**
