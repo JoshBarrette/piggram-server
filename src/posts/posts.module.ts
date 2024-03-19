@@ -16,5 +16,6 @@ import { SharedModule } from "src/shared/shared.module";
   ],
   providers: [PostsService],
   controllers: [PostsController],
+  exports: [PostsService],
 })
 export class PostsModule {}

@@ -1,4 +1,6 @@
 import {
+  DeleteObjectCommand,
+  DeleteObjectCommandInput,
   PutObjectCommand,
   PutObjectCommandInput,
   S3Client,
@@ -60,6 +62,23 @@ export class UploadService {
     };
 
     return await this.sendUpload(key, bucketParams);
+  }
+
+  /**
+   * Delete a single file from S3.
+   * @param key The key of the file to delete.
+   * @returns True on success, the error object on failure.
+   */
+  async deleteFile(key: string): Promise<boolean> {
+    const bucketParams: DeleteObjectCommandInput = {
+      Key: key,
+      Bucket: process.env.AWS_BUCKET_NAME,
+    };
+
+    return await this.s3Client
+      .send(new DeleteObjectCommand(bucketParams))
+      .then(() => true)
+      .catch((e) => e);
   }
 
   /**
@@ -138,15 +157,9 @@ export class UploadService {
     key: string,
     bucketParams: PutObjectCommandInput,
   ): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      try {
-        await this.s3Client.send(new PutObjectCommand(bucketParams));
-        // resolve(this.cdnUrl + "/" + key);
-        resolve("/" + key);
-      } catch (err) {
-        console.log("Error", err);
-        reject(err);
-      }
-    });
+    return await this.s3Client
+      .send(new PutObjectCommand(bucketParams))
+      .then(() => "/" + key)
+      .catch((e) => e);
   }
 }

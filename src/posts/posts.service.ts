@@ -26,7 +26,8 @@ export class PostsService {
   async handleGetAllPosts() {
     return await this.postModel
       .find()
-      .populate("poster", "_id firstName lastName picture");
+      .populate("poster", "_id firstName lastName picture")
+      .sort({ _id: -1 });
   }
 
   /**
@@ -45,6 +46,10 @@ export class PostsService {
     if (post.poster._id.toString() !== req.user.userId) {
       throw new UnauthorizedException();
     }
+
+    post.imageUrls.forEach(async (image) => {
+      await this.uploadService.deleteFile(image.split("/")[1]);
+    });
 
     await this.postModel.deleteOne({ _id: post._id });
     return { success: true };
@@ -158,5 +163,12 @@ export class PostsService {
     );
 
     return await this.postModel.findById(postId);
+  }
+
+  async incrementCommentCount(inc: number, postId: string) {
+    await this.postModel.updateOne(
+      { _id: postId },
+      { $inc: { comments: inc } },
+    );
   }
 }
