@@ -6,6 +6,7 @@ import { Post, PostSchema } from "./schemas/post.schema";
 import { AuthModule } from "src/auth/auth.module";
 import { UploadModule } from "src/upload/upload.module";
 import { SharedModule } from "src/shared/shared.module";
+import { UsersModule } from "src/users/users.module";
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { SharedModule } from "src/shared/shared.module";
     AuthModule,
     UploadModule,
     SharedModule,
+    UsersModule,
   ],
   providers: [PostsService],
   controllers: [PostsController],

@@ -28,6 +28,8 @@ export class UsersService {
         userId: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        picture: user.picture,
+        postsCount: user.postsCount,
         followingCount: user.followingCount,
         followersCount: user.followersCount,
         joinDate: user.createdAt,
@@ -72,6 +74,27 @@ export class UsersService {
     return await this.userModel.findOneAndUpdate(
       { email: email },
       { $set: { picture } },
+      { new: true },
+    );
+  }
+
+  /**
+   * Increment/decrement a user's posts count by
+   * a given value.
+   * @param userId The ID of the user we want to change.
+   * @param change The change in the posts count.
+   * @returns The Updated user.
+   */
+  async updatePostsCount(userId: string, change: number) {
+    const user = await this.userModel.findById(userId);
+
+    if (user.postsCount === 0 && change < 0) {
+      return;
+    }
+
+    return await this.userModel.findOneAndUpdate(
+      { _id: userId },
+      { $inc: { postsCount: change } },
       { new: true },
     );
   }

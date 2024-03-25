@@ -22,6 +22,9 @@ export class User {
   picture: string;
 
   @Prop({ default: 0 })
+  postsCount: number;
+
+  @Prop({ default: 0 })
   followingCount: number;
 
   @Prop({ default: 0 })

@@ -10,6 +10,7 @@ import { UploadService } from "src/upload/upload.service";
 import { ImageSchema } from "./schemas/image.schema";
 import { SharedService } from "src/shared/shared.service";
 import { Request } from "express";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class PostsService {
@@ -17,6 +18,7 @@ export class PostsService {
     @InjectModel(PostSchema.name) private readonly postModel: Model<PostSchema>,
     private readonly uploadService: UploadService,
     private readonly sharedService: SharedService,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -51,6 +53,7 @@ export class PostsService {
       await this.uploadService.deleteFile(image.split("/")[1]);
     });
 
+    await this.usersService.updatePostsCount(post.poster._id.toString(), -1);
     await this.postModel.deleteOne({ _id: post._id });
     return { success: true };
   }
@@ -81,6 +84,7 @@ export class PostsService {
         files,
         newPost._id,
       );
+      await this.usersService.updatePostsCount(posterId, -1);
       return await this.updatePostImages(imageURLs, newPost._id);
     } catch (e) {
       await this.postModel.deleteOne({ _id: newPost._id });
@@ -114,7 +118,7 @@ export class PostsService {
     }
 
     // TODO: pagination
-    return await this.postModel.find({ posterId: id });
+    return await this.postModel.find({ poster: id });
   }
 
   /**
